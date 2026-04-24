@@ -1,347 +1,411 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UX Copy Length Checker</title>
-  <meta name="description" content="Paste UI copy and instantly see how it expands when translated into German, French, Spanish, Mandarin, and more. Free, no sign-up needed." />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['DM Sans', 'sans-serif'],
-            mono: ['DM Mono', 'monospace'],
-          }
-        }
-      }
-    }
-  </script>
+  <meta name="description" content="Check how your UI copy expands when translated. Free, no sign-up.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400;1,14..32,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      background: #F0F2F7;
-      font-family: 'DM Sans', sans-serif;
+    :root {
+      --bg: #F7F7F5;
+      --surface: #FFFFFF;
+      --border: rgba(0, 0, 0, 0.07);
+      --text-1: #0D0D0D;
+      --text-2: #6B7280;
+      --text-3: #9CA3AF;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --mono: 'DM Mono', 'Fira Code', monospace;
+      --r-xl: 20px;
+      --r-lg: 16px;
+      --r-md: 12px;
+      --r-sm: 8px;
+      --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.04);
+      --shadow-up: 0 2px 4px rgba(0,0,0,0.06), 0 12px 40px rgba(0,0,0,0.08);
+      --t: 0.15s ease;
+    }
+
+    html, body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text-1);
       min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* ── Header ─────────────────────────────────────────────── */
-    .header-bar {
-      background: #0F172A;
-      border-bottom: 1px solid #1E293B;
+    /* ── Gradient blobs ────────────────────────────────────────────── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      will-change: transform;
+    }
+    .blob-a {
+      width: 720px; height: 720px;
+      background: radial-gradient(ellipse, rgba(99,102,241,0.09) 0%, transparent 60%);
+      filter: blur(72px);
+      top: -260px; right: -200px;
+    }
+    .blob-b {
+      width: 600px; height: 600px;
+      background: radial-gradient(ellipse, rgba(16,185,129,0.07) 0%, transparent 60%);
+      filter: blur(72px);
+      bottom: -120px; left: -200px;
     }
 
-    /* ── Cards ──────────────────────────────────────────────── */
-    .card {
-      background: #fff;
-      border-radius: 14px;
-      border: 1.5px solid #E2E8F0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      transition: box-shadow 0.2s;
-    }
-
-    /* ── Language toggle chips ──────────────────────────────── */
-    .lang-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 12px;
-      border-radius: 20px;
-      border: 1.5px solid #E2E8F0;
-      background: white;
-      cursor: pointer;
-      font-size: 12.5px;
-      font-weight: 500;
-      color: #64748B;
-      transition: all 0.15s;
-      user-select: none;
-    }
-    .lang-chip:hover { border-color: #94A3B8; color: #1E293B; }
-    .lang-chip.active {
-      border-color: #2563EB;
-      background: #EFF6FF;
-      color: #1D4ED8;
-      font-weight: 600;
-    }
-
-    /* ── Result cards ────────────────────────────────────────── */
-    .result-card {
-      background: #fff;
-      border-radius: 12px;
-      border: 1.5px solid #E2E8F0;
-      padding: 16px;
-      transition: border-color 0.2s, background 0.2s;
-    }
-    .result-card.s-fit     { border-color: #10B981; background: #F0FDF4; }
-    .result-card.s-warn    { border-color: #F59E0B; background: #FFFBEB; }
-    .result-card.s-over    { border-color: #EF4444; background: #FEF2F2; }
-    .result-card.s-shorter { border-color: #10B981; background: #F0FDF4; }
-    .result-card.s-ok      { border-color: #E2E8F0; background: #fff; }
-    .result-card.s-caution { border-color: #F59E0B; background: #FFFBEB; }
-    .result-card.s-long    { border-color: #EF4444; background: #FEF2F2; }
-
-    /* ── Badges ──────────────────────────────────────────────── */
-    .badge {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      font-weight: 600;
-      border-radius: 6px;
-      padding: 2px 8px;
-      display: inline-block;
-      white-space: nowrap;
-    }
-    .b-fit     { background: #D1FAE5; color: #065F46; }
-    .b-warn    { background: #FEF3C7; color: #92400E; }
-    .b-over    { background: #FEE2E2; color: #991B1B; }
-    .b-shorter { background: #D1FAE5; color: #065F46; }
-    .b-ok      { background: #F1F5F9; color: #475569; }
-    .b-caution { background: #FEF3C7; color: #92400E; }
-    .b-long    { background: #FEE2E2; color: #991B1B; }
-
-    /* ── Progress ────────────────────────────────────────────── */
-    .progress-track {
-      background: #E2E8F0;
-      border-radius: 4px;
-      height: 4px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      border-radius: 4px;
-      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
-    }
-
-    /* ── English reference bar ───────────────────────────────── */
-    .en-ref-bar {
+    /* ── Layout ────────────────────────────────────────────────────── */
+    .page {
       position: relative;
-      height: 4px;
-      background: #E2E8F0;
-      border-radius: 4px;
-      overflow: visible;
-      margin-top: 6px;
-    }
-    .en-ref-marker {
-      position: absolute;
-      top: -3px;
-      width: 2px;
-      height: 10px;
-      background: #475569;
-      border-radius: 1px;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 24px 96px;
     }
 
-    /* ── Buttons ─────────────────────────────────────────────── */
-    .btn-primary {
-      background: #2563EB;
-      color: white;
-      border: none;
-      border-radius: 9px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-      box-shadow: 0 1px 4px rgba(37,99,235,0.25);
-    }
-    .btn-primary:hover:not(:disabled) {
-      background: #1D4ED8;
-      box-shadow: 0 4px 14px rgba(37,99,235,0.35);
-    }
-    .btn-primary:active:not(:disabled) { transform: translateY(1px); }
-    .btn-primary:disabled {
-      background: #93C5FD;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    .btn-ghost {
-      background: transparent;
-      color: #94A3B8;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      padding: 5px 7px;
-      transition: background 0.15s, color 0.15s;
-      display: inline-flex;
+    /* ── Nav ───────────────────────────────────────────────────────── */
+    .nav {
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      padding: 24px 0;
     }
-    .btn-ghost:hover { background: rgba(0,0,0,0.04); color: #475569; }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .nav-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(145deg, #4F46E5, #7C3AED);
+      border-radius: 9px;
+      display: grid; place-items: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(79,70,229,0.28);
+    }
+    .nav-name {
+      font-size: 14px; font-weight: 700;
+      color: var(--text-1); letter-spacing: -0.02em;
+    }
+    .nav-v {
+      font-family: var(--mono); font-size: 10px;
+      color: var(--text-3); background: rgba(0,0,0,0.06);
+      padding: 2px 7px; border-radius: 20px;
+    }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .badge-free {
+      font-size: 11px; font-weight: 600;
+      color: #059669; background: #D1FAE5;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .nav-gh {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-2); text-decoration: none;
+      transition: color var(--t);
+    }
+    .nav-gh:hover { color: var(--text-1); }
 
-    /* ── Inputs ──────────────────────────────────────────────── */
+    /* ── Hero ──────────────────────────────────────────────────────── */
+    .hero { padding: 52px 0 56px; text-align: center; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.09em;
+      text-transform: uppercase; color: #6366F1; background: #EEF2FF;
+      padding: 5px 13px; border-radius: 30px; margin-bottom: 22px;
+    }
+    .hero-title {
+      font-size: clamp(36px, 5.5vw, 48px);
+      font-weight: 800; line-height: 1.1; letter-spacing: -0.035em;
+      color: var(--text-1); margin-bottom: 18px;
+    }
+    .hero-title em {
+      font-style: italic;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 16px; font-weight: 400; line-height: 1.65;
+      color: var(--text-2); max-width: 440px; margin: 0 auto;
+    }
+
+    /* ── Card ──────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    /* ── Section label ─────────────────────────────────────────────── */
+    .slabel {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-3);
+    }
+
+    /* ── Textarea ──────────────────────────────────────────────────── */
     textarea {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 15px;
-      border: 1.5px solid #E2E8F0;
-      border-radius: 10px;
-      padding: 14px 16px;
-      resize: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-      outline: none;
-      width: 100%;
-      background: #FAFAFA;
-      color: #111827;
-      line-height: 1.55;
+      display: block;
+      font-family: var(--font); font-size: 15px; line-height: 1.6;
+      width: 100%; background: #FAFAFA;
+      border: 1.5px solid #EAECF0; border-radius: var(--r-md);
+      padding: 14px 16px; resize: none; outline: none;
+      color: var(--text-1);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.03);
+      transition: border-color var(--t), box-shadow var(--t), background var(--t);
     }
     textarea:focus {
-      border-color: #2563EB;
-      background: white;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+      border-color: #A5B4FC; background: #fff;
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.08), inset 0 1px 2px rgba(0,0,0,0.02);
+    }
+    textarea::placeholder { color: #C9D0D8; }
+
+    /* ── Language chips ────────────────────────────────────────────── */
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 13px; border-radius: 30px;
+      border: 1.5px solid #E8EBF0; background: white;
+      cursor: pointer; font-family: var(--font);
+      font-size: 12.5px; font-weight: 500; color: #64748B;
+      transition: all var(--t); user-select: none;
+    }
+    .chip:hover { border-color: #C7D2FE; color: #4F46E5; }
+    .chip.on {
+      border-color: #C7D2FE; background: #EEF2FF;
+      color: #4338CA; font-weight: 600;
     }
 
+    /* ── Divider ───────────────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(0,0,0,0.07), transparent);
+      margin: 24px 0;
+    }
+
+    /* ── Number input ──────────────────────────────────────────────── */
     input[type="number"] {
-      font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      border: 1.5px solid #E2E8F0;
-      border-radius: 8px;
-      padding: 8px 12px;
-      outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-      background: #FAFAFA;
-      color: #111827;
-      width: 100%;
+      font-family: var(--mono); font-size: 13px; width: 100%;
+      background: #FAFAFA; border: 1.5px solid #EAECF0;
+      border-radius: var(--r-sm); padding: 9px 12px; outline: none;
+      color: var(--text-1);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+      transition: border-color var(--t), box-shadow var(--t);
     }
     input[type="number"]:focus {
-      border-color: #2563EB;
-      background: white;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+      border-color: #A5B4FC; background: white;
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.08);
+    }
+    input[type="number"]::placeholder { color: #C9D0D8; }
+
+    /* ── Primary button (dark, Origin-style) ───────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: var(--font); font-size: 14px; font-weight: 600;
+      letter-spacing: -0.01em; border: none;
+      border-radius: var(--r-md); cursor: pointer;
+      padding: 12px 24px;
+      transition: background var(--t), transform 0.1s, box-shadow var(--t), opacity var(--t);
+    }
+    .btn-dark {
+      background: #0D0D0D; color: white;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.10);
+    }
+    .btn-dark:hover:not(:disabled) {
+      background: #1C1C1C;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.16), 0 4px 16px rgba(0,0,0,0.14);
+    }
+    .btn-dark:active:not(:disabled) { transform: translateY(1px); }
+    .btn-dark:disabled { opacity: 0.32; cursor: not-allowed; box-shadow: none; }
+
+    /* ── Ghost button ──────────────────────────────────────────────── */
+    .btn-ghost {
+      background: none; border: none; cursor: pointer;
+      color: #94A3B8; border-radius: var(--r-sm); padding: 5px;
+      display: inline-flex; align-items: center;
+      transition: background var(--t), color var(--t);
+    }
+    .btn-ghost:hover { background: #F1F5F9; color: #475569; }
+
+    /* ── Spinner ───────────────────────────────────────────────────── */
+    .spin {
+      display: inline-block; width: 13px; height: 13px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: rot 0.6s linear infinite;
+    }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    /* ── Error ─────────────────────────────────────────────────────── */
+    .err {
+      display: flex; align-items: flex-start; gap: 9px;
+      background: #FFF1F2; border: 1px solid #FED7DA;
+      border-radius: var(--r-md); padding: 12px 16px;
+      font-size: 13px; color: #BE123C;
     }
 
-    /* ── Spinner ─────────────────────────────────────────────── */
-    .loading-spinner {
-      display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,0.35);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      vertical-align: middle;
-      margin-right: 5px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Error ───────────────────────────────────────────────── */
-    .error-box {
-      background: #FEF2F2;
-      border: 1.5px solid #FECACA;
-      border-radius: 10px;
-      color: #991B1B;
-      font-size: 13px;
-      padding: 12px 16px;
+    /* ── Stat pills ────────────────────────────────────────────────── */
+    .stat-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .stat-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      font-size: 12px; font-weight: 500; color: #374151;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
 
-    /* ── Animations ──────────────────────────────────────────── */
-    .fade-in { animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn {
+    /* ── Result card ───────────────────────────────────────────────── */
+    .rc {
+      background: var(--surface);
+      border-radius: var(--r-lg);
+      border: 1px solid var(--border);
+      border-left: 3px solid #E2E8F0;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 3px 10px rgba(0,0,0,0.03);
+      padding: 18px 20px;
+      transition: box-shadow var(--t), transform var(--t);
+    }
+    .rc:hover { box-shadow: var(--shadow-up); transform: translateY(-1px); }
+    .rc.c-green  { border-left-color: #10B981; }
+    .rc.c-amber  { border-left-color: #F59E0B; }
+    .rc.c-red    { border-left-color: #EF4444; }
+    .rc.c-indigo { border-left-color: #6366F1; }
+
+    /* ── Status pill (Autosend-style dot + label) ──────────────────── */
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: #F8F9FA; border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 20px; padding: 3px 9px;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .d-green  { background: #10B981; }
+    .d-amber  { background: #F59E0B; }
+    .d-red    { background: #EF4444; }
+    .d-indigo { background: #6366F1; }
+
+    /* ── Progress ──────────────────────────────────────────────────── */
+    .pbar-wrap { margin-top: 14px; position: relative; padding-bottom: 18px; }
+    .pbar-bg { height: 3px; background: #F1F5F9; border-radius: 3px; overflow: visible; }
+    .pbar-fill {
+      height: 100%; border-radius: 3px;
+      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    .en-tick {
+      position: absolute; top: -4px;
+      width: 1.5px; height: 11px; background: #CBD5E1;
+      border-radius: 1px; transform: translateX(-50%);
+    }
+    .en-lbl {
+      position: absolute; top: 9px;
+      font-family: var(--mono); font-size: 9px; color: #CBD5E1;
+      transform: translateX(-50%); white-space: nowrap;
+    }
+
+    /* ── Translated text ───────────────────────────────────────────── */
+    .tx {
+      font-size: 15px; font-weight: 400; line-height: 1.55;
+      color: var(--text-1); word-break: break-word; min-height: 22px;
+    }
+
+    /* ── Grid ──────────────────────────────────────────────────────── */
+    .rgrid {
+      display: grid; gap: 10px;
+      grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+    }
+
+    /* ── Info notice ───────────────────────────────────────────────── */
+    .notice {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 12.5px; color: var(--text-2);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: 13px 16px;
+    }
+    .notice a { color: #4F46E5; font-weight: 600; text-decoration: none; }
+    .notice a:hover { text-decoration: underline; }
+
+    /* ── Footer ────────────────────────────────────────────────────── */
+    .footer { text-align: center; margin-top: 56px; font-size: 12px; color: #C9D0D8; }
+    .footer a { color: #9CA3AF; }
+
+    /* ── Animations ────────────────────────────────────────────────── */
+    .fade { animation: fu 0.3s ease both; }
+    .stagger { opacity: 0; animation: fu 0.28s ease forwards; }
+    @keyframes fu {
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
-    }
-    .stagger { opacity: 0; animation: fadeIn 0.3s ease forwards; }
-
-    /* ── Stat pills ──────────────────────────────────────────── */
-    .stat-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      border-radius: 20px;
-      background: white;
-      border: 1px solid #E2E8F0;
-      font-size: 12.5px;
-      font-weight: 500;
-      color: #374151;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    }
-
-    /* ── Translated text ─────────────────────────────────────── */
-    .translated-text {
-      font-size: 15px;
-      color: #0F172A;
-      line-height: 1.5;
-      word-break: break-word;
-      font-weight: 400;
-    }
-
-    /* ── Rate limit notice ───────────────────────────────────── */
-    .notice-bar {
-      background: #F0F9FF;
-      border: 1px solid #BAE6FD;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 12.5px;
-      color: #0369A1;
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
     }
   </style>
 </head>
 <body>
 
-  <!-- ─── Header ─────────────────────────────────────────────────────────────── -->
-  <div class="header-bar px-5 py-4">
-    <div class="max-w-4xl mx-auto flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-        <span style="color:#F8FAFC; font-weight:700; font-size:15px; letter-spacing:-0.01em;">UX Copy Length Checker</span>
-        <span style="background:#1E293B; color:#64748B; font-size:10px; font-weight:500; padding:2px 8px; border-radius:10px; font-family:'DM Mono',monospace;">v3.0</span>
-      </div>
-      <div class="flex items-center gap-4">
-        <span style="color:#475569; font-size:12px;">Free · No sign-up needed</span>
-        <a id="githubLink" href="https://github.com/edwardpakpahan/ux-copy-length-checker" target="_blank" style="color:#64748B; display:flex; align-items:center; gap:5px; font-size:12px; text-decoration:none; transition:color 0.15s;" onmouseover="this.style.color='#94A3B8'" onmouseout="this.style.color='#64748B'">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+  <div class="blob blob-a" aria-hidden="true"></div>
+  <div class="blob blob-b" aria-hidden="true"></div>
+
+  <div class="page">
+
+    <!-- Nav -->
+    <nav class="nav">
+      <a href="#" class="nav-brand">
+        <div class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <span class="nav-name">UX Copy Checker</span>
+        <span class="nav-v">v3.1</span>
+      </a>
+      <div class="nav-right">
+        <span class="badge-free">Free</span>
+        <a href="https://github.com/edwardpakpahan/ux-copy-length-checker" target="_blank" rel="noopener" class="nav-gh">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
           GitHub
         </a>
       </div>
-    </div>
-  </div>
+    </nav>
 
-  <!-- ─── Hero strip ──────────────────────────────────────────────────────────── -->
-  <div style="background: linear-gradient(to bottom, #0F172A 0%, #F0F2F7 100%); padding: 28px 20px 40px;">
-    <div class="max-w-4xl mx-auto">
-      <p style="color:#94A3B8; font-size:13.5px; max-width:560px; line-height:1.6;">
-        Paste your English UI copy and instantly see how much it expands when translated.
-        Essential for checking buttons, labels, and space-constrained UI elements across markets.
-      </p>
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-eyebrow">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Translation Length Checker
+      </div>
+      <h1 class="hero-title">Does your copy fit<br><em>every language?</em></h1>
+      <p class="hero-sub">Paste English UI copy and instantly see how it expands across 10 languages. Essential for buttons, labels, and tight UI spaces.</p>
     </div>
-  </div>
-
-  <!-- ─── Main content ────────────────────────────────────────────────────────── -->
-  <div class="max-w-4xl mx-auto px-4 pb-20" style="margin-top:-24px;">
 
     <!-- Input card -->
-    <div class="card p-6 mb-4">
+    <div class="card" style="margin-bottom:14px;">
 
-      <!-- Label + char counter -->
-      <div class="flex items-center justify-between mb-3">
-        <label style="font-weight:700; font-size:14px; color:#0F172A;">English UI Copy</label>
-        <span id="charCounter" style="font-family:'DM Mono',monospace; font-size:12px; color:#94A3B8;">0 chars</span>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <span class="slabel">English copy</span>
+        <span style="font-family:var(--mono); font-size:11.5px; color:var(--text-3);" id="charCounter">0 chars</span>
       </div>
 
-      <!-- Textarea -->
-      <textarea id="copyInput" rows="3" placeholder="e.g. Add to cart · Confirm order · Sign up for free · Save changes"></textarea>
+      <textarea id="copyInput" rows="3" placeholder="e.g. Add to cart · Sign up for free · Save changes · Confirm order"></textarea>
 
-      <!-- Language chips -->
-      <div class="mt-5">
-        <div style="font-size:11px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color:#94A3B8; margin-bottom:8px;">
-          Target Languages <span style="font-weight:400; color:#CBD5E1; text-transform:none; letter-spacing:0;">— click to toggle</span>
+      <div style="margin-top:20px;">
+        <div class="slabel" style="margin-bottom:10px;">
+          Target languages
+          <span style="font-weight:400; text-transform:none; letter-spacing:0; color:#C9D0D8;">— click to toggle</span>
         </div>
-        <div class="flex flex-wrap gap-2" id="langChips"></div>
+        <div class="chips" id="langChips"></div>
       </div>
 
-      <!-- Divider -->
-      <div style="height:1px; background:#F1F5F9; margin:20px 0;"></div>
+      <div class="divider"></div>
 
-      <!-- Char limit + Check button -->
-      <div class="flex items-end gap-3">
-        <div style="width:156px; flex-shrink:0;">
-          <label style="font-size:11px; font-weight:600; color:#64748B; display:block; margin-bottom:5px; letter-spacing:0.05em; text-transform:uppercase;">Char Limit</label>
-          <input type="number" id="charLimitInput" placeholder="None" min="1" oninput="applyLimit()" />
-          <div style="font-size:10.5px; color:#CBD5E1; font-family:'DM Mono',monospace; margin-top:4px;">Leave blank for no limit</div>
+      <div style="display:flex; align-items:flex-end; gap:12px;">
+        <div style="width:140px; flex-shrink:0;">
+          <div class="slabel" style="margin-bottom:6px;">Char limit</div>
+          <input type="number" id="charLimitInput" placeholder="None" min="1" oninput="applyLimit()">
         </div>
         <div style="flex:1; display:flex; justify-content:flex-end;">
-          <button class="btn-primary" id="checkBtn" onclick="checkTranslations()" disabled style="padding:11px 26px; display:flex; align-items:center; gap:7px;">
+          <button class="btn btn-dark" id="checkBtn" onclick="checkTranslations()" disabled>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             Check Translations
           </button>
@@ -350,301 +414,244 @@
     </div>
 
     <!-- Error -->
-    <div id="errorBox" class="error-box mb-4" style="display:none;"></div>
+    <div id="errorBox" class="err" style="display:none; margin-bottom:14px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="errorMsg"></span>
+    </div>
 
     <!-- Results -->
-    <div id="resultsSection" style="display:none;" class="fade-in">
-
-      <!-- Summary pills -->
-      <div id="summaryBar" class="flex flex-wrap gap-2 mb-4 items-center"></div>
-
-      <!-- Results grid -->
-      <div id="resultsGrid" class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));"></div>
-
-      <!-- Export row -->
-      <div class="flex justify-end mt-5">
-        <button onclick="exportJson()" style="display:inline-flex; align-items:center; gap:6px; background:white; border:1.5px solid #E2E8F0; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:500; color:#374151; cursor:pointer; transition:border-color 0.15s;" onmouseover="this.style.borderColor='#94A3B8'" onmouseout="this.style.borderColor='#E2E8F0'">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <div id="resultsSection" style="display:none;" class="fade">
+      <div class="stat-row" id="summaryBar"></div>
+      <div class="rgrid" id="resultsGrid"></div>
+      <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+        <button onclick="exportJson()" style="display:inline-flex; align-items:center; gap:6px; background:white; border:1px solid rgba(0,0,0,0.08); border-radius:9px; padding:8px 16px; font-size:13px; font-weight:500; color:#374151; cursor:pointer; font-family:'Inter',sans-serif; box-shadow:0 1px 2px rgba(0,0,0,0.04); transition:box-shadow 0.15s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.09)'" onmouseout="this.style.boxShadow='0 1px 2px rgba(0,0,0,0.04)'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export JSON
         </button>
       </div>
     </div>
 
-    <!-- Rate limit notice -->
-    <div class="notice-bar mt-8">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <!-- Notice -->
+    <div class="notice" style="margin-top:24px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <span>
-        Translations are provided by <a href="https://mymemory.translated.net" target="_blank" style="font-weight:600; color:#0369A1; text-decoration:underline;">MyMemory</a> — free, no API key needed.
-        Anonymous usage is limited to ~500 words/day per IP.
-        <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" style="font-weight:600; color:#0369A1; text-decoration:underline;">Increase your limit →</a>
+        Translations by <a href="https://mymemory.translated.net" target="_blank" rel="noopener">MyMemory</a> — free, no API key.
+        Anonymous usage limited to ~500 words/day.
+        <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" rel="noopener">Increase limit →</a>
       </span>
     </div>
 
-    <!-- Footer -->
-    <div style="text-align:center; margin-top:40px;">
-      <p style="font-size:12px; color:#CBD5E1;">
-        Made for designers &amp; engineers who ship multilingual UIs ·
-        <a href="https://github.com/edwardpakpahan/ux-copy-length-checker" target="_blank" style="color:#94A3B8; text-decoration:underline;">View on GitHub</a>
-      </p>
+    <div class="footer">
+      Made for designers &amp; engineers shipping multilingual UIs ·
+      <a href="https://github.com/edwardpakpahan/ux-copy-length-checker" target="_blank" rel="noopener">View source</a>
     </div>
 
   </div>
 
 <script>
-  // ─── State ────────────────────────────────────────────────────────────────────
-  let lastResults    = null;
+  let lastResults     = null;
   let lastEnglishText = '';
-  let selectedLangs  = new Set(['de', 'fr', 'nl', 'es', 'zh']);
+  let selectedLangs   = new Set(['de','fr','nl','es','zh']);
 
-  const ALL_LANGUAGES = [
-    { code: 'de', name: 'German',     flag: '🇩🇪' },
-    { code: 'fr', name: 'French',     flag: '🇫🇷' },
-    { code: 'nl', name: 'Dutch',      flag: '🇳🇱' },
-    { code: 'es', name: 'Spanish',    flag: '🇪🇸' },
-    { code: 'zh', name: 'Mandarin',   flag: '🇨🇳' },
-    { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
-    { code: 'it', name: 'Italian',    flag: '🇮🇹' },
-    { code: 'ja', name: 'Japanese',   flag: '🇯🇵' },
-    { code: 'ko', name: 'Korean',     flag: '🇰🇷' },
-    { code: 'ar', name: 'Arabic',     flag: '🇸🇦' },
+  const LANGS = [
+    {code:'de', name:'German',     flag:'🇩🇪'},
+    {code:'fr', name:'French',     flag:'🇫🇷'},
+    {code:'nl', name:'Dutch',      flag:'🇳🇱'},
+    {code:'es', name:'Spanish',    flag:'🇪🇸'},
+    {code:'zh', name:'Mandarin',   flag:'🇨🇳'},
+    {code:'pt', name:'Portuguese', flag:'🇧🇷'},
+    {code:'it', name:'Italian',    flag:'🇮🇹'},
+    {code:'ja', name:'Japanese',   flag:'🇯🇵'},
+    {code:'ko', name:'Korean',     flag:'🇰🇷'},
+    {code:'ar', name:'Arabic',     flag:'🇸🇦'},
   ];
 
-  // ─── Init ─────────────────────────────────────────────────────────────────────
   window.onload = () => {
-    renderLangChips();
-    const input = document.getElementById('copyInput');
-    input.addEventListener('input', () => {
-      const len = input.value.length;
+    renderChips();
+    document.getElementById('copyInput').addEventListener('input', () => {
+      const len = document.getElementById('copyInput').value.length;
       document.getElementById('charCounter').textContent = `${len} char${len !== 1 ? 's' : ''}`;
       document.getElementById('checkBtn').disabled = len === 0;
     });
   };
 
-  // ─── Language chips ───────────────────────────────────────────────────────────
-  function renderLangChips() {
-    const container = document.getElementById('langChips');
-    container.innerHTML = '';
-    ALL_LANGUAGES.forEach(lang => {
-      const chip = document.createElement('button');
-      chip.className = 'lang-chip' + (selectedLangs.has(lang.code) ? ' active' : '');
-      chip.innerHTML = `<span style="font-size:15px; line-height:1;">${lang.flag}</span>${lang.name}`;
-      chip.onclick = () => toggleLang(lang.code, chip);
-      container.appendChild(chip);
+  function renderChips() {
+    const el = document.getElementById('langChips');
+    el.innerHTML = '';
+    LANGS.forEach(l => {
+      const c = document.createElement('button');
+      c.className = 'chip' + (selectedLangs.has(l.code) ? ' on' : '');
+      c.innerHTML = `<span style="font-size:15px;line-height:1;">${l.flag}</span><span>${l.name}</span>`;
+      c.onclick = () => {
+        if (selectedLangs.has(l.code)) {
+          if (selectedLangs.size <= 1) return;
+          selectedLangs.delete(l.code);
+          c.classList.remove('on');
+        } else {
+          selectedLangs.add(l.code);
+          c.classList.add('on');
+        }
+        if (lastResults) applyLimit();
+      };
+      el.appendChild(c);
     });
   }
 
-  function toggleLang(code, chip) {
-    if (selectedLangs.has(code)) {
-      if (selectedLangs.size <= 1) return;
-      selectedLangs.delete(code);
-      chip.classList.remove('active');
-    } else {
-      selectedLangs.add(code);
-      chip.classList.add('active');
-    }
-    if (lastResults) applyLimit();
-  }
-
-  // ─── Check translations ───────────────────────────────────────────────────────
   async function checkTranslations() {
     const text = document.getElementById('copyInput').value.trim();
     if (!text) return;
 
-    const btn      = document.getElementById('checkBtn');
-    const errorBox = document.getElementById('errorBox');
-    errorBox.style.display = 'none';
-
-    btn.innerHTML = '<span class="loading-spinner"></span> Translating…';
+    const btn = document.getElementById('checkBtn');
+    const eb  = document.getElementById('errorBox');
+    eb.style.display = 'none';
+    btn.innerHTML = '<span class="spin"></span> Translating…';
     btn.disabled  = true;
 
-    const activeLangs = ALL_LANGUAGES.filter(l => selectedLangs.has(l.code));
+    const active = LANGS.filter(l => selectedLangs.has(l.code));
 
     try {
-      const results = await Promise.all(
-        activeLangs.map(async lang => {
-          const url  = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${lang.code}`;
-          const res  = await fetch(url);
-          if (!res.ok) throw new Error(`HTTP ${res.status} for ${lang.name}`);
-          const data = await res.json();
-          if (data.responseStatus !== 200) {
-            throw new Error(data.responseDetails || `Translation error for ${lang.name}`);
-          }
-          return { code: lang.code, text: data.responseData.translatedText };
-        })
-      );
+      const results = await Promise.all(active.map(async l => {
+        const r = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${l.code}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status} for ${l.name}`);
+        const d = await r.json();
+        if (d.responseStatus !== 200) throw new Error(d.responseDetails || `Error for ${l.name}`);
+        return { code: l.code, text: d.responseData.translatedText };
+      }));
 
-      const translations = {};
-      results.forEach(r => { translations[r.code] = r.text; });
-
-      lastResults     = translations;
+      const tr = {};
+      results.forEach(r => { tr[r.code] = r.text; });
+      lastResults     = tr;
       lastEnglishText = text;
-      renderResults(text, translations);
+      renderResults(text, tr);
 
-    } catch (err) {
-      console.error('[UX Checker]', err);
-      errorBox.textContent = `Error: ${err.message}`;
-      errorBox.style.display = 'block';
+    } catch (e) {
+      document.getElementById('errorMsg').textContent = e.message;
+      eb.style.display = 'flex';
     } finally {
       btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Check Translations`;
       btn.disabled = document.getElementById('copyInput').value.length === 0;
     }
   }
 
-  // ─── Render results ───────────────────────────────────────────────────────────
-  function renderResults(englishText, translations) {
-    const englishLen  = englishText.length;
-    const limit       = parseInt(document.getElementById('charLimitInput').value) || 0;
-    const activeLangs = ALL_LANGUAGES.filter(l => selectedLangs.has(l.code) && translations[l.code] !== undefined);
-    const lengths     = activeLangs.map(l => (translations[l.code] || '').length);
-    const maxLen      = Math.max(englishLen, ...lengths);
+  function renderResults(eng, tr) {
+    const engLen = eng.length;
+    const limit  = parseInt(document.getElementById('charLimitInput').value) || 0;
+    const active = LANGS.filter(l => selectedLangs.has(l.code) && tr[l.code] !== undefined);
+    const lens   = active.map(l => (tr[l.code] || '').length);
+    const maxLen = Math.max(engLen, ...lens);
 
     document.getElementById('resultsSection').style.display = 'block';
 
-    // ── Summary pills ──
+    // Summary
     const bar = document.getElementById('summaryBar');
     bar.innerHTML = '';
-
-    const avgPct = lengths.length > 0
-      ? Math.round((lengths.reduce((a, b) => a + b, 0) / lengths.length - englishLen) / Math.max(englishLen, 1) * 100)
-      : 0;
-    const overCount = limit ? activeLangs.filter(l => (translations[l.code] || '').length > limit).length : 0;
-
-    const pills = [
-      { icon: '🌐', label: `${activeLangs.length} language${activeLangs.length !== 1 ? 's' : ''}` },
-      { icon: '📝', label: `${englishLen} chars (English)` },
-      { icon: avgPct >= 0 ? '📏' : '✂️', label: avgPct >= 0 ? `Avg +${avgPct}% expansion` : `Avg ${Math.abs(avgPct)}% shorter` },
-    ];
-    if (limit) pills.push({ icon: overCount === 0 ? '✅' : '⚠️', label: overCount === 0 ? 'All fit within limit' : `${overCount} exceed limit` });
-
-    pills.forEach(p => {
+    const avg  = lens.length ? Math.round((lens.reduce((a,b)=>a+b,0)/lens.length - engLen) / Math.max(engLen,1) * 100) : 0;
+    const over = limit ? active.filter(l => (tr[l.code]||'').length > limit).length : 0;
+    [
+      { i: '🌐', t: `${active.length} language${active.length!==1?'s':''}` },
+      { i: '📝', t: `${engLen} chars (English)` },
+      { i: avg>=0?'📏':'✂️', t: avg>=0?`Avg +${avg}% expansion`:`Avg ${Math.abs(avg)}% shorter` },
+      ...(limit ? [{ i: over===0?'✅':'⚠️', t: over===0?'All fit within limit':`${over} exceed limit` }] : [])
+    ].forEach(p => {
       const el = document.createElement('div');
       el.className = 'stat-pill';
-      el.innerHTML = `<span>${p.icon}</span><span>${p.label}</span>`;
+      el.innerHTML = `<span>${p.i}</span><span>${p.t}</span>`;
       bar.appendChild(el);
     });
 
-    // ── Result cards ──
+    // Cards
     const grid = document.getElementById('resultsGrid');
     grid.innerHTML = '';
 
-    activeLangs.forEach((lang, idx) => {
-      const translated = translations[lang.code] || '—';
-      const len        = translated.length;
-      const diff       = len - englishLen;
-      const pct        = Math.round(diff / Math.max(englishLen, 1) * 100);
-      const barWidth   = maxLen > 0 ? Math.min(len / maxLen * 100, 100) : 0;
-      const enBarWidth = maxLen > 0 ? Math.min(englishLen / maxLen * 100, 100) : 0;
+    active.forEach((l, i) => {
+      const t    = tr[l.code] || '—';
+      const len  = t.length;
+      const diff = len - engLen;
+      const pct  = Math.round(diff / Math.max(engLen,1) * 100);
+      const barW = maxLen > 0 ? Math.min(len/maxLen*100, 100) : 0;
+      const enW  = maxLen > 0 ? Math.min(engLen/maxLen*100, 100) : 0;
 
-      // Status
-      let status, bClass, barColor;
+      let cc, dc, barColor, dotLabel;
       if (limit) {
-        if (len <= limit)         { status = 's-fit';  bClass = 'b-fit';  barColor = '#10B981'; }
-        else if (len <= limit*1.1){ status = 's-warn'; bClass = 'b-warn'; barColor = '#F59E0B'; }
-        else                      { status = 's-over'; bClass = 'b-over'; barColor = '#EF4444'; }
+        if (len <= limit)          { cc='c-green';  dc='d-green';  barColor='#10B981'; dotLabel='Fits'; }
+        else if (len <= limit*1.1) { cc='c-amber';  dc='d-amber';  barColor='#F59E0B'; dotLabel='Tight'; }
+        else                       { cc='c-red';    dc='d-red';    barColor='#EF4444'; dotLabel='Over'; }
       } else {
-        if (pct < 0)       { status = 's-shorter'; bClass = 'b-shorter'; barColor = '#10B981'; }
-        else if (pct <= 20){ status = 's-ok';      bClass = 'b-ok';      barColor = '#3B82F6'; }
-        else if (pct <= 40){ status = 's-caution'; bClass = 'b-caution'; barColor = '#F59E0B'; }
-        else               { status = 's-long';    bClass = 'b-long';    barColor = '#EF4444'; }
+        if (pct < 0)        { cc='c-green';  dc='d-green';  barColor='#10B981'; }
+        else if (pct <= 20) { cc='c-indigo'; dc='d-indigo'; barColor='#6366F1'; }
+        else if (pct <= 40) { cc='c-amber';  dc='d-amber';  barColor='#F59E0B'; }
+        else                { cc='c-red';    dc='d-red';    barColor='#EF4444'; }
+        dotLabel = pct===0?'±0%':pct>0?`+${pct}%`:`${pct}%`;
       }
 
-      const pctLabel  = pct === 0 ? '±0%' : pct > 0 ? `+${pct}%` : `${pct}%`;
-      const badgeText = limit
-        ? (status === 's-fit' ? 'Fits' : status === 's-warn' ? 'Tight' : 'Over')
-        : pctLabel;
-
       const card = document.createElement('div');
-      card.className = `result-card ${status} stagger`;
-      card.style.animationDelay = `${idx * 0.06}s`;
-
+      card.className = `rc ${cc} stagger`;
+      card.style.animationDelay = `${i * 0.06}s`;
       card.innerHTML = `
-        <div class="flex items-start justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <span style="font-size:24px; line-height:1;">${lang.flag}</span>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:26px;line-height:1;">${l.flag}</span>
             <div>
-              <div style="font-weight:600; font-size:13px; color:#0F172A; line-height:1.2;">${lang.name}</div>
-              <div style="font-size:11px; color:#94A3B8; font-family:'DM Mono',monospace; margin-top:2px;">${len} chars · ${pctLabel}</div>
+              <div style="font-weight:600;font-size:13px;color:#0D0D0D;line-height:1.2;">${l.name}</div>
+              <div style="font-family:'DM Mono',monospace;font-size:10.5px;color:#9CA3AF;margin-top:2px;">${len} chars</div>
             </div>
           </div>
-          <div class="flex items-center gap-1">
-            <span class="badge ${bClass}">${badgeText}</span>
-            <button class="btn-ghost" id="copy-${lang.code}" onclick="copyTranslation('${lang.code}', this)" title="Copy translation">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="status-pill">
+              <span class="dot ${dc}"></span>
+              <span style="font-family:'DM Mono',monospace;font-size:10.5px;font-weight:500;color:#374151;">${dotLabel}</span>
+            </div>
+            <button class="btn-ghost" onclick="copyT('${l.code}',this)" title="Copy translation">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             </button>
           </div>
         </div>
-        <div class="translated-text mb-4" id="text-${lang.code}">${escapeHtml(translated)}</div>
-        <div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width:${barWidth}%; background:${barColor};"></div>
+        <div class="tx" id="tx-${l.code}">${esc(t)}</div>
+        <div class="pbar-wrap">
+          <div class="pbar-bg">
+            <div class="pbar-fill" style="width:${barW}%;background:${barColor};"></div>
           </div>
-          <div style="position:relative; height:0;">
-            <div style="position:absolute; left:${enBarWidth}%; top:-4px; width:1.5px; height:8px; background:#94A3B8; border-radius:1px; transform:translateX(-50%);" title="English length"></div>
-          </div>
-          ${limit ? `<div style="font-size:10.5px; color:#94A3B8; font-family:'DM Mono',monospace; margin-top:8px;">${len} / ${limit} chars used</div>` : '<div style="height:6px;"></div>'}
+          <div class="en-tick" style="left:${enW}%;"></div>
+          <div class="en-lbl" style="left:${enW}%;">EN</div>
         </div>
+        ${limit ? `<div style="font-family:'DM Mono',monospace;font-size:10.5px;color:#9CA3AF;">${len}/${limit}</div>` : ''}
       `;
-
       grid.appendChild(card);
     });
   }
 
-  // ─── Apply limit (re-render with updated limit) ───────────────────────────────
   function applyLimit() {
     if (lastResults) renderResults(lastEnglishText, lastResults);
   }
 
-  // ─── Copy translation ─────────────────────────────────────────────────────────
-  function copyTranslation(code, btn) {
-    const text = document.getElementById(`text-${code}`)?.textContent || '';
-    navigator.clipboard.writeText(text).then(() => {
-      const orig = btn.innerHTML;
+  function copyT(code, btn) {
+    const t = document.getElementById(`tx-${code}`)?.textContent || '';
+    navigator.clipboard.writeText(t).then(() => {
+      const o = btn.innerHTML;
       btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-      btn.style.color = '#10B981';
-      setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+      setTimeout(() => { btn.innerHTML = o; }, 2000);
     }).catch(console.error);
   }
 
-  // ─── Export JSON ──────────────────────────────────────────────────────────────
   function exportJson() {
     if (!lastResults) return;
-    const limit       = parseInt(document.getElementById('charLimitInput').value) || null;
-    const activeLangs = ALL_LANGUAGES.filter(l => selectedLangs.has(l.code) && lastResults[l.code] !== undefined);
-    const payload = {
-      english:    lastEnglishText,
-      charLimit:  limit,
-      exportedAt: new Date().toISOString(),
-      translations: {}
-    };
-    activeLangs.forEach(lang => {
-      const t   = lastResults[lang.code] || '';
-      const pct = Math.round((t.length - lastEnglishText.length) / Math.max(lastEnglishText.length, 1) * 100);
-      payload.translations[lang.code] = {
-        language:        lang.name,
-        text:            t,
-        charCount:       t.length,
-        diffFromEnglish: t.length - lastEnglishText.length,
-        expansionPct:    pct,
-        ...(limit ? { fitsLimit: t.length <= limit } : {})
-      };
+    const limit  = parseInt(document.getElementById('charLimitInput').value) || null;
+    const active = LANGS.filter(l => selectedLangs.has(l.code) && lastResults[l.code] !== undefined);
+    const out = { english: lastEnglishText, charLimit: limit, exportedAt: new Date().toISOString(), translations: {} };
+    active.forEach(l => {
+      const t   = lastResults[l.code] || '';
+      const pct = Math.round((t.length - lastEnglishText.length) / Math.max(lastEnglishText.length,1) * 100);
+      out.translations[l.code] = { language: l.name, text: t, charCount: t.length, diffFromEnglish: t.length - lastEnglishText.length, expansionPct: pct, ...(limit ? { fitsLimit: t.length <= limit } : {}) };
     });
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `ux-copy-translations-${Date.now()}.json`;
+    const a    = Object.assign(document.createElement('a'), { href: url, download: `ux-copy-${Date.now()}.json` });
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  // ─── Utils ────────────────────────────────────────────────────────────────────
-  function escapeHtml(str) {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 </script>
 </body>
