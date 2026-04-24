@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UX Copy Length Checker</title>
+  <meta name="description" content="Paste UI copy and instantly see how it expands when translated into German, French, Spanish, Mandarin, and more. Free, no sign-up needed." />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['DM Sans', 'sans-serif'],
+            mono: ['DM Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      background: #F0F2F7;
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .header-bar {
+      background: #0F172A;
+      border-bottom: 1px solid #1E293B;
+    }
+
+    /* ── Cards ──────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1.5px solid #E2E8F0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: box-shadow 0.2s;
+    }
+
+    /* ── Language toggle chips ──────────────────────────────── */
+    .lang-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1.5px solid #E2E8F0;
+      background: white;
+      cursor: pointer;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #64748B;
+      transition: all 0.15s;
+      user-select: none;
+    }
+    .lang-chip:hover { border-color: #94A3B8; color: #1E293B; }
+    .lang-chip.active {
+      border-color: #2563EB;
+      background: #EFF6FF;
+      color: #1D4ED8;
+      font-weight: 600;
+    }
+
+    /* ── Result cards ────────────────────────────────────────── */
+    .result-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1.5px solid #E2E8F0;
+      padding: 16px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .result-card.s-fit     { border-color: #10B981; background: #F0FDF4; }
+    .result-card.s-warn    { border-color: #F59E0B; background: #FFFBEB; }
+    .result-card.s-over    { border-color: #EF4444; background: #FEF2F2; }
+    .result-card.s-shorter { border-color: #10B981; background: #F0FDF4; }
+    .result-card.s-ok      { border-color: #E2E8F0; background: #fff; }
+    .result-card.s-caution { border-color: #F59E0B; background: #FFFBEB; }
+    .result-card.s-long    { border-color: #EF4444; background: #FEF2F2; }
+
+    /* ── Badges ──────────────────────────────────────────────── */
+    .badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      padding: 2px 8px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .b-fit     { background: #D1FAE5; color: #065F46; }
+    .b-warn    { background: #FEF3C7; color: #92400E; }
+    .b-over    { background: #FEE2E2; color: #991B1B; }
+    .b-shorter { background: #D1FAE5; color: #065F46; }
+    .b-ok      { background: #F1F5F9; color: #475569; }
+    .b-caution { background: #FEF3C7; color: #92400E; }
+    .b-long    { background: #FEE2E2; color: #991B1B; }
+
+    /* ── Progress ────────────────────────────────────────────── */
+    .progress-track {
+      background: #E2E8F0;
+      border-radius: 4px;
+      height: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* ── English reference bar ───────────────────────────────── */
+    .en-ref-bar {
+      position: relative;
+      height: 4px;
+      background: #E2E8F0;
+      border-radius: 4px;
+      overflow: visible;
+      margin-top: 6px;
+    }
+    .en-ref-marker {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 10px;
+      background: #475569;
+      border-radius: 1px;
+    }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    .btn-primary {
+      background: #2563EB;
+      color: white;
+      border: none;
+      border-radius: 9px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 1px 4px rgba(37,99,235,0.25);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #1D4ED8;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+    }
+    .btn-primary:active:not(:disabled) { transform: translateY(1px); }
+    .btn-primary:disabled {
+      background: #93C5FD;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: #94A3B8;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 5px 7px;
+      transition: background 0.15s, color 0.15s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-ghost:hover { background: rgba(0,0,0,0.04); color: #475569; }
+
+    /* ── Inputs ──────────────────────────────────────────────── */
+    textarea {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      resize: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+      width: 100%;
+      background: #FAFAFA;
+      color: #111827;
+      line-height: 1.55;
+    }
+    textarea:focus {
+      border-color: #2563EB;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    input[type="number"] {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      background: #FAFAFA;
+      color: #111827;
+      width: 100%;
+    }
+    input[type="number"]:focus {
+      border-color: #2563EB;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    /* ── Spinner ─────────────────────────────────────────────── */
+    .loading-spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error ───────────────────────────────────────────────── */
+    .error-box {
+      background: #FEF2F2;
+      border: 1.5px solid #FECACA;
+      border-radius: 10px;
+      color: #991B1B;
+      font-size: 13px;
+      padding: 12px 16px;
+    }
+
+    /* ── Animations ──────────────────────────────────────────── */
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .stagger { opacity: 0; animation: fadeIn 0.3s ease forwards; }
+
+    /* ── Stat pills ──────────────────────────────────────────── */
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: white;
+      border: 1px solid #E2E8F0;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: #374151;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    /* ── Translated text ─────────────────────────────────────── */
+    .translated-text {
+      font-size: 15px;
+      color: #0F172A;
+      line-height: 1.5;
+      word-break: break-word;
+      font-weight: 400;
+    }
+
+    /* ── Rate limit notice ───────────────────────────────────── */
+    .notice-bar {
+      background: #F0F9FF;
+      border: 1px solid #BAE6FD;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      color: #0369A1;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Header ─────────────────────────────────────────────────────────────── -->
+  <div class="header-bar px-5 py-4">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span style="color:#F8FAFC; font-weight:700; font-size:15px; letter-spacing:-0.01em;">UX Copy Length Checker</span>
+        <span style="background:#1E293B; color:#64748B; font-size:10px; font-weight:500; padding:2px 8px; border-radius:10px; font-family:'DM Mono',monospace;">v3.0</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span style="color:#475569; font-size:12px;">Free · No sign-up needed</span>
+        <a id="githubLink" href="https://github.com/edwardpakpahan/ux-copy-length-checker" target="_blank" style="color:#64748B; display:flex; align-items:center; gap:5px; font-size:12px; text-decoration:none; transition:color 0.15s;" onmouseover="this.style.color='#94A3B8'" onmouseout="this.style.color='#64748B'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Hero strip ──────────────────────────────────────────────────────────── -->
+  <div style="background: linear-gradient(to bottom, #0F172A 0%, #F0F2F7 100%); padding: 28px 20px 40px;">
+    <div class="max-w-4xl mx-auto">
+      <p style="color:#94A3B8; font-size:13.5px; max-width:560px; line-height:1.6;">
+        Paste your English UI copy and instantly see how much it expands when translated.
+        Essential for checking buttons, labels, and space-constrained UI elements across markets.
+      </p>
+    </div>
+  </div>
+
+  <!-- ─── Main content ────────────────────────────────────────────────────────── -->
+  <div class="max-w-4xl mx-auto px-4 pb-20" style="margin-top:-24px;">
+
+    <!-- Input card -->
+    <div class="card p-6 mb-4">
+
+      <!-- Label + char counter -->
+      <div class="flex items-center justify-between mb-3">
+        <label style="font-weight:700; font-size:14px; color:#0F172A;">English UI Copy</label>
+        <span id="charCounter" style="font-family:'DM Mono',monospace; font-size:12px; color:#94A3B8;">0 chars</span>
+      </div>
+
+      <!-- Textarea -->
+      <textarea id="copyInput" rows="3" placeholder="e.g. Add to cart · Confirm order · Sign up for free · Save changes"></textarea>
+
+      <!-- Language chips -->
+      <div class="mt-5">
+        <div style="font-size:11px; font-weight:600; letter-spacing:0.07em; text-transform:uppercase; color:#94A3B8; margin-bottom:8px;">
+          Target Languages <span style="font-weight:400; color:#CBD5E1; text-transform:none; letter-spacing:0;">— click to toggle</span>
+        </div>
+        <div class="flex flex-wrap gap-2" id="langChips"></div>
+      </div>
+
+      <!-- Divider -->
+      <div style="height:1px; background:#F1F5F9; margin:20px 0;"></div>
+
+      <!-- Char limit + Check button -->
+      <div class="flex items-end gap-3">
+        <div style="width:156px; flex-shrink:0;">
+          <label style="font-size:11px; font-weight:600; color:#64748B; display:block; margin-bottom:5px; letter-spacing:0.05em; text-transform:uppercase;">Char Limit</label>
+          <input type="number" id="charLimitInput" placeholder="None" min="1" oninput="applyLimit()" />
+          <div style="font-size:10.5px; color:#CBD5E1; font-family:'DM Mono',monospace; margin-top:4px;">Leave blank for no limit</div>
+        </div>
+        <div style="flex:1; display:flex; justify-content:flex-end;">
+          <button class="btn-primary" id="checkBtn" onclick="checkTranslations()" disabled style="padding:11px 26px; display:flex; align-items:center; gap:7px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            Check Translations
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="errorBox" class="error-box mb-4" style="display:none;"></div>
+
+    <!-- Results -->
+    <div id="resultsSection" style="display:none;" class="fade-in">
+
+      <!-- Summary pills -->
+      <div id="summaryBar" class="flex flex-wrap gap-2 mb-4 items-center"></div>
+
+      <!-- Results grid -->
+      <div id="resultsGrid" class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));"></div>
+
+      <!-- Export row -->
+      <div class="flex justify-end mt-5">
+        <button onclick="exportJson()" style="display:inline-flex; align-items:center; gap:6px; background:white; border:1.5px solid #E2E8F0; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:500; color:#374151; cursor:pointer; transition:border-color 0.15s;" onmouseover="this.style.borderColor='#94A3B8'" onmouseout="this.style.borderColor='#E2E8F0'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export JSON
+        </button>
+      </div>
+    </div>
+
+    <!-- Rate limit notice -->
+    <div class="notice-bar mt-8">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>
+        Translations are provided by <a href="https://mymemory.translated.net" target="_blank" style="font-weight:600; color:#0369A1; text-decoration:underline;">MyMemory</a> — free, no API key needed.
+        Anonymous usage is limited to ~500 words/day per IP.
+        <a href="https://mymemory.translated.net/doc/usagelimits.php" target="_blank" style="font-weight:600; color:#0369A1; text-decoration:underline;">Increase your limit →</a>
+      </span>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center; margin-top:40px;">
+      <p style="font-size:12px; color:#CBD5E1;">
+        Made for designers &amp; engineers who ship multilingual UIs ·
+        <a href="https://github.com/edwardpakpahan/ux-copy-length-checker" target="_blank" style="color:#94A3B8; text-decoration:underline;">View on GitHub</a>
+      </p>
+    </div>
+
+  </div>
+
+<script>
+  // ─── State ────────────────────────────────────────────────────────────────────
+  let lastResults    = null;
+  let lastEnglishText = '';
+  let selectedLangs  = new Set(['de', 'fr', 'nl', 'es', 'zh']);
+
+  const ALL_LANGUAGES = [
+    { code: 'de', name: 'German',     flag: '🇩🇪' },
+    { code: 'fr', name: 'French',     flag: '🇫🇷' },
+    { code: 'nl', name: 'Dutch',      flag: '🇳🇱' },
+    { code: 'es', name: 'Spanish',    flag: '🇪🇸' },
+    { code: 'zh', name: 'Mandarin',   flag: '🇨🇳' },
+    { code: 'pt', name: 'Portuguese', flag: '🇧🇷' },
+    { code: 'it', name: 'Italian',    flag: '🇮🇹' },
+    { code: 'ja', name: 'Japanese',   flag: '🇯🇵' },
+    { code: 'ko', name: 'Korean',     flag: '🇰🇷' },
+    { code: 'ar', name: 'Arabic',     flag: '🇸🇦' },
+  ];
+
+  // ─── Init ─────────────────────────────────────────────────────────────────────
+  window.onload = () => {
+    renderLangChips();
+    const input = document.getElementById('copyInput');
+    input.addEventListener('input', () => {
+      const len = input.value.length;
+      document.getElementById('charCounter').textContent = `${len} char${len !== 1 ? 's' : ''}`;
+      document.getElementById('checkBtn').disabled = len === 0;
+    });
+  };
+
+  // ─── Language chips ───────────────────────────────────────────────────────────
+  function renderLangChips() {
+    const container = document.getElementById('langChips');
+    container.innerHTML = '';
+    ALL_LANGUAGES.forEach(lang => {
+      const chip = document.createElement('button');
+      chip.className = 'lang-chip' + (selectedLangs.has(lang.code) ? ' active' : '');
+      chip.innerHTML = `<span style="font-size:15px; line-height:1;">${lang.flag}</span>${lang.name}`;
+      chip.onclick = () => toggleLang(lang.code, chip);
+      container.appendChild(chip);
+    });
+  }
+
+  function toggleLang(code, chip) {
+    if (selectedLangs.has(code)) {
+      if (selectedLangs.size <= 1) return;
+      selectedLangs.delete(code);
+      chip.classList.remove('active');
+    } else {
+      selectedLangs.add(code);
+      chip.classList.add('active');
+    }
+    if (lastResults) applyLimit();
+  }
+
+  // ─── Check translations ───────────────────────────────────────────────────────
+  async function checkTranslations() {
+    const text = document.getElementById('copyInput').value.trim();
+    if (!text) return;
+
+    const btn      = document.getElementById('checkBtn');
+    const errorBox = document.getElementById('errorBox');
+    errorBox.style.display = 'none';
+
+    btn.innerHTML = '<span class="loading-spinner"></span> Translating…';
+    btn.disabled  = true;
+
+    const activeLangs = ALL_LANGUAGES.filter(l => selectedLangs.has(l.code));
+
+    try {
+      const results = await Promise.all(
+        activeLangs.map(async lang => {
+          const url  = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${lang.code}`;
+          const res  = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status} for ${lang.name}`);
+          const data = await res.json();
+          if (data.responseStatus !== 200) {
+            throw new Error(data.responseDetails || `Translation error for ${lang.name}`);
+          }
+          return { code: lang.code, text: data.responseData.translatedText };
+        })
+      );
+
+      const translations = {};
+      results.forEach(r => { translations[r.code] = r.text; });
+
+      lastResults     = translations;
+      lastEnglishText = text;
+      renderResults(text, translations);
+
+    } catch (err) {
+      console.error('[UX Checker]', err);
+      errorBox.textContent = `Error: ${err.message}`;
+      errorBox.style.display = 'block';
+    } finally {
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Check Translations`;
+      btn.disabled = document.getElementById('copyInput').value.length === 0;
+    }
+  }
+
+  // ─── Render results ───────────────────────────────────────────────────────────
+  function renderResults(englishText, translations) {
+    const englishLen  = englishText.length;
+    const limit       = parseInt(document.getElementById('charLimitInput').value) || 0;
+    const activeLangs = ALL_LANGUAGES.filter(l => selectedLangs.has(l.code) && translations[l.code] !== undefined);
+    const lengths     = activeLangs.map(l => (translations[l.code] || '').length);
+    const maxLen      = Math.max(englishLen, ...lengths);
+
+    document.getElementById('resultsSection').style.display = 'block';
+
+    // ── Summary pills ──
+    const bar = document.getElementById('summaryBar');
+    bar.innerHTML = '';
+
+    const avgPct = lengths.length > 0
+      ? Math.round((lengths.reduce((a, b) => a + b, 0) / lengths.length - englishLen) / Math.max(englishLen, 1) * 100)
+      : 0;
+    const overCount = limit ? activeLangs.filter(l => (translations[l.code] || '').length > limit).length : 0;
+
+    const pills = [
+      { icon: '🌐', label: `${activeLangs.length} language${activeLangs.length !== 1 ? 's' : ''}` },
+      { icon: '📝', label: `${englishLen} chars (English)` },
+      { icon: avgPct >= 0 ? '📏' : '✂️', label: avgPct >= 0 ? `Avg +${avgPct}% expansion` : `Avg ${Math.abs(avgPct)}% shorter` },
+    ];
+    if (limit) pills.push({ icon: overCount === 0 ? '✅' : '⚠️', label: overCount === 0 ? 'All fit within limit' : `${overCount} exceed limit` });
+
+    pills.forEach(p => {
+      const el = document.createElement('div');
+      el.className = 'stat-pill';
+      el.innerHTML = `<span>${p.icon}</span><span>${p.label}</span>`;
+      bar.appendChild(el);
+    });
+
+    // ── Result cards ──
+    const grid = document.getElementById('resultsGrid');
+    grid.innerHTML = '';
+
+    activeLangs.forEach((lang, idx) => {
+      const translated = translations[lang.code] || '—';
+      const len        = translated.length;
+      const diff       = len - englishLen;
+      const pct        = Math.round(diff / Math.max(englishLen, 1) * 100);
+      const barWidth   = maxLen > 0 ? Math.min(len / maxLen * 100, 100) : 0;
+      const enBarWidth = maxLen > 0 ? Math.min(englishLen / maxLen * 100, 100) : 0;
+
+      // Status
+      let status, bClass, barColor;
+      if (limit) {
+        if (len <= limit)         { status = 's-fit';  bClass = 'b-fit';  barColor = '#10B981'; }
+        else if (len <= limit*1.1){ status = 's-warn'; bClass = 'b-warn'; barColor = '#F59E0B'; }
+        else                      { status = 's-over'; bClass = 'b-over'; barColor = '#EF4444'; }
+      } else {
+        if (pct < 0)       { status = 's-shorter'; bClass = 'b-shorter'; barColor = '#10B981'; }
+        else if (pct <= 20){ status = 's-ok';      bClass = 'b-ok';      barColor = '#3B82F6'; }
+        else if (pct <= 40){ status = 's-caution'; bClass = 'b-caution'; barColor = '#F59E0B'; }
+        else               { status = 's-long';    bClass = 'b-long';    barColor = '#EF4444'; }
+      }
+
+      const pctLabel  = pct === 0 ? '±0%' : pct > 0 ? `+${pct}%` : `${pct}%`;
+      const badgeText = limit
+        ? (status === 's-fit' ? 'Fits' : status === 's-warn' ? 'Tight' : 'Over')
+        : pctLabel;
+
+      const card = document.createElement('div');
+      card.className = `result-card ${status} stagger`;
+      card.style.animationDelay = `${idx * 0.06}s`;
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span style="font-size:24px; line-height:1;">${lang.flag}</span>
+            <div>
+              <div style="font-weight:600; font-size:13px; color:#0F172A; line-height:1.2;">${lang.name}</div>
+              <div style="font-size:11px; color:#94A3B8; font-family:'DM Mono',monospace; margin-top:2px;">${len} chars · ${pctLabel}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="badge ${bClass}">${badgeText}</span>
+            <button class="btn-ghost" id="copy-${lang.code}" onclick="copyTranslation('${lang.code}', this)" title="Copy translation">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="translated-text mb-4" id="text-${lang.code}">${escapeHtml(translated)}</div>
+        <div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${barWidth}%; background:${barColor};"></div>
+          </div>
+          <div style="position:relative; height:0;">
+            <div style="position:absolute; left:${enBarWidth}%; top:-4px; width:1.5px; height:8px; background:#94A3B8; border-radius:1px; transform:translateX(-50%);" title="English length"></div>
+          </div>
+          ${limit ? `<div style="font-size:10.5px; color:#94A3B8; font-family:'DM Mono',monospace; margin-top:8px;">${len} / ${limit} chars used</div>` : '<div style="height:6px;"></div>'}
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  // ─── Apply limit (re-render with updated limit) ───────────────────────────────
+  function applyLimit() {
+    if (lastResults) renderResults(lastEnglishText, lastResults);
+  }
+
+  // ─── Copy translation ─────────────────────────────────────────────────────────
+  function copyTranslation(code, btn) {
+    const text = document.getElementById(`text-${code}`)?.textContent || '';
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.innerHTML;
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+      btn.style.color = '#10B981';
+      setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+    }).catch(console.error);
+  }
+
+  // ─── Export JSON ──────────────────────────────────────────────────────────────
+  function exportJson() {
+    if (!lastResults) return;
+    const limit       = parseInt(document.getElementById('charLimitInput').value) || null;
+    const activeLangs = ALL_LANGUAGES.filter(l => selectedLangs.has(l.code) && lastResults[l.code] !== undefined);
+    const payload = {
+      english:    lastEnglishText,
+      charLimit:  limit,
+      exportedAt: new Date().toISOString(),
+      translations: {}
+    };
+    activeLangs.forEach(lang => {
+      const t   = lastResults[lang.code] || '';
+      const pct = Math.round((t.length - lastEnglishText.length) / Math.max(lastEnglishText.length, 1) * 100);
+      payload.translations[lang.code] = {
+        language:        lang.name,
+        text:            t,
+        charCount:       t.length,
+        diffFromEnglish: t.length - lastEnglishText.length,
+        expansionPct:    pct,
+        ...(limit ? { fitsLimit: t.length <= limit } : {})
+      };
+    });
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `ux-copy-translations-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ─── Utils ────────────────────────────────────────────────────────────────────
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>
