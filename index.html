@@ -866,12 +866,12 @@
     if (!aiKey) {
       panel.innerHTML = `
         <div class="key-prompt">
-          <p>Add a free <strong>OpenRouter</strong> key to generate shorter alternatives that preserve the meaning.</p>
+          <p>Add an <strong>OpenRouter</strong> key to generate shorter alternatives that preserve the meaning.</p>
           <div class="key-prompt-row">
             <input type="text" id="inlineKey-${code}" placeholder="sk-or-v1-…" />
             <button class="key-prompt-go" onclick="saveInlineKey('${code}','${esc(name)}')">Generate →</button>
           </div>
-          <a href="https://openrouter.ai/keys" target="_blank" rel="noopener" class="key-prompt-link">Get a free key at openrouter.ai →</a>
+          <a href="https://openrouter.ai/keys" target="_blank" rel="noopener" class="key-prompt-link">Get a key at openrouter.ai →</a>
         </div>`;
       return;
     }
@@ -881,48 +881,77 @@
     btn.innerHTML = `<span class="spin" style="border-color:rgba(99,102,241,0.25);border-top-color:#6366F1;"></span> Generating…`;
     panel.innerHTML = '';
 
-    const prompt = `You are a professional UI/UX localisation expert.
+    const prompt = `You are a UI/UX localisation expert. Respond with ONLY a JSON array — no explanation, no prose, no markdown.
 
-The ${name} translation below exceeds the ${limit}-character limit for a UI button or label.
+Task: shorten this ${name} UI translation to fit within ${limit} characters.
 
-English original: "${lastEnglishText}"
-Current ${name} translation: "${curTx}" (${curTx.length} chars — limit is ${limit})
+English: "${lastEnglishText}"
+Current ${name} (${curTx.length} chars, limit ${limit}): "${curTx}"
 
-Generate exactly 3 shorter ${name} alternatives that:
-1. Each fit within ${limit} characters
-2. Preserve the core meaning and call-to-action of the original
-3. Sound completely natural as ${name} UI copy (not word-for-word translations)
+Output exactly 3 shorter ${name} alternatives. Each must be under ${limit} characters. Preserve the core meaning.
 
-Return ONLY a valid JSON array of 3 strings. No explanation, no markdown, no backticks.
-Example format: ["option 1","option 2","option 3"]`;
+RESPOND WITH ONLY THIS FORMAT (a raw JSON array, nothing else):
+["shorter option 1","shorter option 2","shorter option 3"]`;
+
+    // Free models — no cost, tries each in order if one is unavailable
+    const MODELS = [
+      'google/gemma-3-27b-it:free',
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'microsoft/phi-4-reasoning-plus:free',
+    ];
 
     try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${aiKey}`,
-          'X-Title': 'UX Copy Length Checker'
-        },
-        body: JSON.stringify({
-          model: 'meta-llama/llama-3.1-8b-instruct:free',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.45,
-          max_tokens: 160
-        })
-      });
+      let lastErr = null;
+      let suggestions = null;
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `API error ${res.status}`);
+      for (const model of MODELS) {
+        try {
+          const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${aiKey}`,
+              'X-Title': 'UX Copy Length Checker'
+            },
+            body: JSON.stringify({
+              model,
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.45,
+              max_tokens: 160
+            })
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            const msg = err?.error?.message || `API error ${res.status}`;
+            // If it's a "no endpoints" error, try the next model
+            if (msg.toLowerCase().includes('endpoint') || msg.toLowerCase().includes('no model')) {
+              lastErr = new Error(msg);
+              continue;
+            }
+            throw new Error(msg);
+          }
+
+          const data = await res.json();
+          const raw  = data?.choices?.[0]?.message?.content || '';
+
+          // Try direct parse first, then fall back to extracting the [...] array
+          try {
+            suggestions = JSON.parse(raw.replace(/```json|```/gi, '').trim());
+          } catch {
+            const match = raw.match(/\[[\s\S]*\]/); // greedy — gets the full array
+            if (!match) { lastErr = new Error('Model returned no JSON array — retrying…'); continue; }
+            suggestions = JSON.parse(match[0]);
+          }
+          break; // success — stop trying models
+
+        } catch (e) {
+          lastErr = e;
+        }
       }
 
-      const data    = await res.json();
-      const raw     = data?.choices?.[0]?.message?.content || '';
-      const cleaned = raw.replace(/```json|```/gi, '').trim();
-      const suggestions = JSON.parse(cleaned);
-
-      if (!Array.isArray(suggestions) || suggestions.length === 0) throw new Error('Unexpected response format');
+      if (!suggestions) throw lastErr || new Error('All models unavailable. Try again later.');
+      if (!Array.isArray(suggestions) || suggestions.length === 0) throw new Error('Unexpected response format.');
 
       renderSuggestions(code, suggestions, limit);
 
