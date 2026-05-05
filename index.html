@@ -853,6 +853,27 @@
     updateAiKeyUI();
   }
 
+  // ── Dynamic free-model list ──────────────────────────────────────────────────
+  let _cachedFreeModels = null;
+  async function getLiveFreeModels() {
+    if (_cachedFreeModels) return _cachedFreeModels;
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/models');
+      const { data } = await res.json();
+      // Keep only :free instruction/chat models, prefer ones with "instruct" or "it" in the name
+      const all = (data || []).filter(m => m.id.endsWith(':free')).map(m => m.id);
+      const preferred = all.filter(id => /instruct|chat|gemma|llama|qwen|mistral/i.test(id));
+      const list = (preferred.length ? preferred : all).slice(0, 5);
+      if (list.length) { _cachedFreeModels = list; return list; }
+    } catch {}
+    // Hard fallback if API call itself fails
+    return [
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'mistralai/mistral-7b-instruct:free',
+      'qwen/qwen-2.5-7b-instruct:free',
+    ];
+  }
+
   // ── Suggest shorter ──────────────────────────────────────────────────────────
   async function suggestShorter(code, name) {
     const panel  = document.getElementById(`spanel-${code}`);
@@ -893,12 +914,8 @@ Output exactly 3 shorter ${name} alternatives. Each must be under ${limit} chara
 RESPOND WITH ONLY THIS FORMAT (a raw JSON array, nothing else):
 ["shorter option 1","shorter option 2","shorter option 3"]`;
 
-    // Free models — no cost, tries each in order if one is unavailable
-    const MODELS = [
-      'google/gemma-3-27b-it:free',
-      'meta-llama/llama-3.3-70b-instruct:free',
-      'microsoft/phi-4-reasoning-plus:free',
-    ];
+    // Fetch currently live free models from OpenRouter at runtime (cached after first call)
+    const MODELS = await getLiveFreeModels();
 
     try {
       let lastErr = null;
