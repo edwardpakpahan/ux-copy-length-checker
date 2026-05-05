@@ -343,6 +343,138 @@
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    /* ── AI Suggest feature ─────────────────────────────────────────── */
+    .suggest-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: var(--font); font-size: 12px; font-weight: 600;
+      color: #6366F1; background: #EEF2FF;
+      border: 1.5px solid #C7D2FE; border-radius: 20px;
+      padding: 4px 12px; cursor: pointer; margin-top: 12px;
+      transition: all var(--t);
+    }
+    .suggest-btn:hover:not(:disabled) { background: #E0E7FF; border-color: #A5B4FC; }
+    .suggest-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .suggest-panel {
+      margin-top: 10px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      padding-top: 10px;
+      animation: fu 0.2s ease both;
+    }
+
+    /* Key prompt inside the panel */
+    .key-prompt {
+      background: #FAFAFA; border: 1.5px solid #EAECF0;
+      border-radius: var(--r-md); padding: 12px 14px;
+    }
+    .key-prompt p {
+      font-size: 12px; color: var(--text-2); margin-bottom: 8px; line-height: 1.5;
+    }
+    .key-prompt-row {
+      display: flex; gap: 7px; align-items: center;
+    }
+    .key-prompt-row input[type="text"] {
+      font-family: var(--mono); font-size: 12px;
+      flex: 1; background: white; border: 1.5px solid #EAECF0;
+      border-radius: var(--r-sm); padding: 7px 10px; outline: none;
+      color: var(--text-1); transition: border-color var(--t), box-shadow var(--t);
+    }
+    .key-prompt-row input[type="text"]:focus {
+      border-color: #A5B4FC;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+    }
+    .key-prompt-row input[type="text"]::placeholder { color: #CBD5E1; }
+    .key-prompt-go {
+      font-family: var(--font); font-size: 12px; font-weight: 600;
+      background: #0D0D0D; color: white; border: none;
+      border-radius: var(--r-sm); padding: 7px 13px; cursor: pointer;
+      white-space: nowrap; transition: opacity var(--t);
+    }
+    .key-prompt-go:hover { opacity: 0.85; }
+    .key-prompt-link {
+      display: block; font-size: 11px; color: #6366F1;
+      font-weight: 500; text-decoration: none; margin-top: 7px;
+    }
+    .key-prompt-link:hover { text-decoration: underline; }
+
+    /* Suggestion options */
+    .s-opts { display: flex; flex-direction: column; gap: 6px; }
+    .s-opt {
+      display: flex; align-items: center; gap: 8px;
+      background: #F8F9FA; border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 10px; padding: 9px 12px;
+      transition: background var(--t);
+    }
+    .s-opt:hover { background: #F1F5F9; }
+    .s-opt-text {
+      flex: 1; font-size: 13.5px; color: var(--text-1);
+      font-weight: 400; word-break: break-word;
+    }
+    .s-opt-count {
+      font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .s-opt-count.ok  { color: #10B981; }
+    .s-opt-count.no  { color: #EF4444; }
+    .s-opt-use {
+      font-family: var(--font); font-size: 11.5px; font-weight: 600;
+      color: #4F46E5; background: white;
+      border: 1.5px solid #C7D2FE; border-radius: 8px;
+      padding: 3px 10px; cursor: pointer; flex-shrink: 0;
+      transition: all var(--t);
+    }
+    .s-opt-use:hover { background: #EEF2FF; }
+    .s-opt-use.used  { color: #10B981; border-color: #A7F3D0; background: #F0FDF4; }
+
+    /* AI key indicator in input card */
+    .ai-key-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 16px; padding-top: 16px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .ai-key-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+      text-transform: uppercase; color: var(--text-3);
+    }
+    .ai-key-status {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11.5px; font-weight: 500; color: var(--text-2);
+    }
+    .ai-key-toggle {
+      font-size: 11.5px; font-weight: 500; color: #6366F1;
+      background: none; border: none; cursor: pointer;
+      text-decoration: underline; text-underline-offset: 2px;
+      font-family: var(--font); padding: 0;
+    }
+    .ai-key-toggle:hover { color: #4338CA; }
+    .ai-key-input-row {
+      display: flex; gap: 7px; align-items: center; margin-top: 10px;
+    }
+    .ai-key-input-row input[type="text"] {
+      font-family: var(--mono); font-size: 12.5px; flex: 1;
+      background: #FAFAFA; border: 1.5px solid #EAECF0;
+      border-radius: var(--r-sm); padding: 8px 11px; outline: none;
+      color: var(--text-1); transition: border-color var(--t), box-shadow var(--t);
+    }
+    .ai-key-input-row input[type="text"]:focus {
+      border-color: #A5B4FC;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.08);
+    }
+    .ai-key-input-row input[type="text"]::placeholder { color: #CBD5E1; }
+    .ai-key-save {
+      font-family: var(--font); font-size: 12.5px; font-weight: 600;
+      background: #0D0D0D; color: white; border: none;
+      border-radius: var(--r-sm); padding: 8px 14px; cursor: pointer;
+      transition: opacity var(--t); white-space: nowrap;
+    }
+    .ai-key-save:hover { opacity: 0.85; }
+    .ai-key-hint {
+      font-size: 11px; color: var(--text-3); margin-top: 6px;
+    }
+    .ai-key-hint a { color: #6366F1; text-decoration: none; font-weight: 500; }
+    .ai-key-hint a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -359,7 +491,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         </div>
         <span class="nav-name">UX Copy Checker</span>
-        <span class="nav-v">v3.1</span>
+        <span class="nav-v">v3.2</span>
       </a>
       <div class="nav-right">
         <span class="badge-free">Free</span>
@@ -412,6 +544,25 @@
           </button>
         </div>
       </div>
+
+      <!-- AI key section -->
+      <div class="ai-key-bar">
+        <span class="ai-key-label">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          AI Suggestions
+        </span>
+        <div id="aiKeyStatus"></div>
+      </div>
+      <div id="aiKeySetup" style="display:none;">
+        <div class="ai-key-input-row">
+          <input type="text" id="aiKeyInput" placeholder="sk-or-v1-…  (OpenRouter API key)" />
+          <button class="ai-key-save" onclick="saveAiKey()">Save</button>
+        </div>
+        <div class="ai-key-hint">
+          Free tier available — no credit card needed.
+          <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">Get a key at openrouter.ai →</a>
+        </div>
+      </div>
     </div>
 
     <!-- Error -->
@@ -453,6 +604,7 @@
   let lastResults     = null;
   let lastEnglishText = '';
   let selectedLangs   = new Set(['de','fr','nl','es','zh']);
+  let aiKey           = localStorage.getItem('or_key') || '';
 
   const LANGS = [
     {code:'de', name:'German',     flag:'🇩🇪'},
@@ -469,6 +621,7 @@
 
   window.onload = () => {
     renderChips();
+    updateAiKeyUI();
     document.getElementById('copyInput').addEventListener('input', () => {
       const len = document.getElementById('copyInput').value.length;
       document.getElementById('charCounter').textContent = `${len} char${len !== 1 ? 's' : ''}`;
@@ -610,12 +763,19 @@
         <div class="tx" id="tx-${l.code}">${esc(t)}</div>
         <div class="pbar-wrap">
           <div class="pbar-bg">
-            <div class="pbar-fill" style="width:${barW}%;background:${barColor};"></div>
+            <div class="pbar-fill" id="pbar-${l.code}" style="width:${barW}%;background:${barColor};"></div>
           </div>
           <div class="en-tick" style="left:${enW}%;"></div>
           <div class="en-lbl" style="left:${enW}%;">EN</div>
         </div>
-        ${limit ? `<div style="font-family:'DM Mono',monospace;font-size:10.5px;color:#9CA3AF;">${len}/${limit}</div>` : ''}
+        ${limit ? `<div style="font-family:'DM Mono',monospace;font-size:10.5px;color:#9CA3AF;" id="charline-${l.code}">${len}/${limit}</div>` : ''}
+        ${(limit && (cc === 'c-red' || cc === 'c-amber')) ? `
+        <button class="suggest-btn" id="sbtn-${l.code}" onclick="suggestShorter('${l.code}','${esc(l.name)}')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Suggest shorter
+        </button>
+        <div id="spanel-${l.code}" class="suggest-panel" style="display:none;"></div>
+        ` : ''}
       `;
       grid.appendChild(card);
     });
@@ -653,6 +813,185 @@
 
   function esc(s) {
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── AI key management ────────────────────────────────────────────────────────
+  function updateAiKeyUI() {
+    const statusEl = document.getElementById('aiKeyStatus');
+    const setupEl  = document.getElementById('aiKeySetup');
+    if (aiKey) {
+      statusEl.innerHTML = `
+        <span class="ai-key-status">
+          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10B981;margin-right:4px;"></span>
+          Key saved
+          <button class="ai-key-toggle" style="margin-left:8px;" onclick="clearAiKey()">Remove</button>
+        </span>`;
+      setupEl.style.display = 'none';
+    } else {
+      statusEl.innerHTML = `<button class="ai-key-toggle" onclick="toggleAiKeySetup()">Add key to enable →</button>`;
+    }
+  }
+
+  function toggleAiKeySetup() {
+    const el = document.getElementById('aiKeySetup');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    if (el.style.display === 'block') document.getElementById('aiKeyInput').focus();
+  }
+
+  function saveAiKey() {
+    const val = document.getElementById('aiKeyInput').value.trim();
+    if (!val) return;
+    aiKey = val;
+    localStorage.setItem('or_key', val);
+    document.getElementById('aiKeyInput').value = '';
+    updateAiKeyUI();
+  }
+
+  function clearAiKey() {
+    aiKey = '';
+    localStorage.removeItem('or_key');
+    updateAiKeyUI();
+  }
+
+  // ── Suggest shorter ──────────────────────────────────────────────────────────
+  async function suggestShorter(code, name) {
+    const panel  = document.getElementById(`spanel-${code}`);
+    const btn    = document.getElementById(`sbtn-${code}`);
+    const limit  = parseInt(document.getElementById('charLimitInput').value) || 0;
+    const curTx  = document.getElementById(`tx-${code}`)?.textContent || '';
+
+    panel.style.display = 'block';
+
+    // No key yet — show inline key prompt
+    if (!aiKey) {
+      panel.innerHTML = `
+        <div class="key-prompt">
+          <p>Add a free <strong>OpenRouter</strong> key to generate shorter alternatives that preserve the meaning.</p>
+          <div class="key-prompt-row">
+            <input type="text" id="inlineKey-${code}" placeholder="sk-or-v1-…" />
+            <button class="key-prompt-go" onclick="saveInlineKey('${code}','${esc(name)}')">Generate →</button>
+          </div>
+          <a href="https://openrouter.ai/keys" target="_blank" rel="noopener" class="key-prompt-link">Get a free key at openrouter.ai →</a>
+        </div>`;
+      return;
+    }
+
+    // Has key — run the suggestion
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spin" style="border-color:rgba(99,102,241,0.25);border-top-color:#6366F1;"></span> Generating…`;
+    panel.innerHTML = '';
+
+    const prompt = `You are a professional UI/UX localisation expert.
+
+The ${name} translation below exceeds the ${limit}-character limit for a UI button or label.
+
+English original: "${lastEnglishText}"
+Current ${name} translation: "${curTx}" (${curTx.length} chars — limit is ${limit})
+
+Generate exactly 3 shorter ${name} alternatives that:
+1. Each fit within ${limit} characters
+2. Preserve the core meaning and call-to-action of the original
+3. Sound completely natural as ${name} UI copy (not word-for-word translations)
+
+Return ONLY a valid JSON array of 3 strings. No explanation, no markdown, no backticks.
+Example format: ["option 1","option 2","option 3"]`;
+
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${aiKey}`,
+          'X-Title': 'UX Copy Length Checker'
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/llama-3.1-8b-instruct:free',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.45,
+          max_tokens: 160
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `API error ${res.status}`);
+      }
+
+      const data    = await res.json();
+      const raw     = data?.choices?.[0]?.message?.content || '';
+      const cleaned = raw.replace(/```json|```/gi, '').trim();
+      const suggestions = JSON.parse(cleaned);
+
+      if (!Array.isArray(suggestions) || suggestions.length === 0) throw new Error('Unexpected response format');
+
+      renderSuggestions(code, suggestions, limit);
+
+    } catch (err) {
+      panel.innerHTML = `<div style="font-size:12px;color:#BE123C;padding:8px 0;">Error: ${esc(err.message)} — <button onclick="suggestShorter('${code}','${esc(name)}')" style="background:none;border:none;color:#6366F1;cursor:pointer;font-size:12px;font-weight:600;text-decoration:underline;padding:0;">Try again</button></div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Suggest shorter`;
+    }
+  }
+
+  function saveInlineKey(code, name) {
+    const val = document.getElementById(`inlineKey-${code}`)?.value.trim();
+    if (!val) return;
+    aiKey = val;
+    localStorage.setItem('or_key', val);
+    updateAiKeyUI();
+    suggestShorter(code, name);
+  }
+
+  function renderSuggestions(code, suggestions, limit) {
+    const panel = document.getElementById(`spanel-${code}`);
+    panel.innerHTML = `<div class="s-opts" id="sopts-${code}"></div>`;
+    const opts = document.getElementById(`sopts-${code}`);
+
+    suggestions.forEach((s, idx) => {
+      const fits    = s.length <= limit;
+      const optEl   = document.createElement('div');
+      optEl.className = 's-opt';
+      optEl.innerHTML = `
+        <span class="s-opt-text">${esc(s)}</span>
+        <span class="s-opt-count ${fits ? 'ok' : 'no'}">${s.length}/${limit}</span>
+        <button class="s-opt-use" id="use-${code}-${idx}" onclick="useSuggestion('${code}', this, ${idx})">Use</button>`;
+      optEl.querySelector('.s-opt-use').dataset.text = s;
+      opts.appendChild(optEl);
+    });
+  }
+
+  function useSuggestion(code, btn, idx) {
+    const text  = btn.dataset.text;
+    const limit = parseInt(document.getElementById('charLimitInput').value) || 0;
+
+    // Update the card's translation text
+    const txEl = document.getElementById(`tx-${code}`);
+    if (txEl) txEl.textContent = text;
+
+    // Update char count line
+    const charLine = document.getElementById(`charline-${code}`);
+    if (charLine && limit) charLine.textContent = `${text.length}/${limit}`;
+
+    // Update progress bar
+    const pbar = document.getElementById(`pbar-${code}`);
+    if (pbar && lastResults) {
+      const allLens  = Object.values(lastResults).map(v => v.length);
+      const maxLen   = Math.max(lastEnglishText.length, ...allLens, text.length);
+      const newWidth = maxLen > 0 ? Math.min(text.length / maxLen * 100, 100) : 0;
+      const fits     = limit ? text.length <= limit : null;
+      const newColor = fits === null ? '#6366F1' : fits ? '#10B981' : text.length <= limit*1.1 ? '#F59E0B' : '#EF4444';
+      pbar.style.width  = `${newWidth}%`;
+      pbar.style.background = newColor;
+    }
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(text).catch(() => {});
+
+    // Button feedback
+    btn.textContent = '✓ Copied';
+    btn.classList.add('used');
+    setTimeout(() => { btn.textContent = 'Use'; btn.classList.remove('used'); }, 2500);
   }
 </script>
 </body>
